@@ -153,7 +153,7 @@ print_assembly_summary(Results);
 % =========================================================================
 % 11. SAVE
 % =========================================================================
-save_results(Results, folder);
+save_results(Results, tables, folder);
 fprintf('\nDone. Results saved to:\n  %s\n', folder);
 
 T = Results.tables.movie_summary;
@@ -166,7 +166,7 @@ for m = 1:height(T)
     
 end
 xlabel('Time (s)');  ylabel('Mean rotation (full turns)');
-legen('show')
+legend('show')
 
 end
 

@@ -1,4 +1,4 @@
-function save_results(Results, folder)
+function save_results(Results, tables, folder)
 % SAVE_RESULTS  Persist the analysis output to disk.
 %
 %   save_results(Results, folder)
@@ -14,6 +14,10 @@ function save_results(Results, folder)
 
     % --- .mat -----------------------------------------------------------
     mat_path = fullfile(folder, 'AnalysisResults.mat');
+    save(mat_path, 'Results', '-v7.3');
+    fprintf('  Saved: %s\n', mat_path);
+    
+    mat_path = fullfile(folder, 'summaryTables.mat');
     save(mat_path, 'Results', '-v7.3');
     fprintf('  Saved: %s\n', mat_path);
 
