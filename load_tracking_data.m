@@ -1,4 +1,4 @@
-function trackRes = load_tracking_data(folder)
+function trackRes = load_tracking_data(folder, exposure_time_s)
 % LOAD_TRACKING_DATA  Load and validate TrackRes.mat from the given folder.
 %
 %   TrackRes = load_tracking_data(folder)
@@ -36,6 +36,9 @@ function trackRes = load_tracking_data(folder)
             'TrackRes.mat does not contain a variable named ''TrackRes''.');
     end
     trackRes = loaded.trackRes;
+    for k = 1:size(trackRes.traces, 1)
+        trackRes.traces{k, 1}.t = trackRes.traces{k, 1}.t * exposure_time_s;
+    end
 
     % --- Field check -----------------------------------------------------
     if ~isfield(trackRes, 'traces')

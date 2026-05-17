@@ -1,4 +1,4 @@
-function particle_metrics = compute_angular_metrics(particle_metrics, exposure_time_s, win)
+function particle_metrics = compute_angular_metrics(particle_metrics, win)
 % COMPUTE_ANGULAR_METRICS  Angular speed and rotation frequency per particle.
 %
 %   angular_metrics = compute_angular_metrics(particle_metrics, exposure_time_s, win)
@@ -83,7 +83,7 @@ function particle_metrics = compute_angular_metrics(particle_metrics, exposure_t
         %  2. Instantaneous angular velocity  omega = d(theta)/dt
         % ------------------------------------------------------------------
         dt = diff(t_valid);
-        dt(dt == 0) = exposure_time_s;   % safeguard
+        
 
         dth    = diff(th_unwrap_valid);
         omega_valid = dth ./ dt;          % signed rad/s

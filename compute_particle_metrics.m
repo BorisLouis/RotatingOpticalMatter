@@ -1,4 +1,4 @@
-function particle_metrics = compute_particle_metrics(traces, exposure_time_s, win)
+function particle_metrics = compute_particle_metrics(traces, win)
 % COMPUTE_PARTICLE_METRICS  Compute per-particle position statistics and speed.
 %
 %   particle_metrics = compute_particle_metrics(traces, exposure_time_s, win)
@@ -82,18 +82,8 @@ function particle_metrics = compute_particle_metrics(traces, exposure_time_s, wi
 
         % Decide whether the t column is trustworthy
         t_diff = diff(t_raw);
-        if all(t_diff > 0)
-            % Monotonically increasing: use as-is
-            t = t_raw;
-        else
-            % Fallback: synthetic time from exposure
-            nF = numel(x);
-            t  = (0 : nF-1)' * exposure_time_s;
-            if ~all(t_diff == 0)
-                warning('OT:TimeNonMonotonic', ...
-                    'Particle %d: t column is non-monotonic. Using synthetic t.', p);
-            end
-        end
+        t = t_raw;
+        
 
         all_x{p} = x;
         all_y{p} = y;
@@ -156,8 +146,7 @@ function particle_metrics = compute_particle_metrics(traces, exposure_time_s, wi
 
         % --- Frame-to-frame speed ----------------------------------------
         dt       = diff(t);
-        dt(dt == 0) = exposure_time_s;   % safeguard against zero dt
-
+        
         dx = diff(x);   dx(isnan(dx)) = 0;
         dy = diff(y);   dy(isnan(dy)) = 0;
         dr = diff(r);   dr(isnan(dr)) = 0;

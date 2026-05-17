@@ -1,4 +1,4 @@
-function Results = main_analyze_optical_trapping()
+function [Results, tables] = main_analyze_optical_trapping()
 % MAIN_ANALYZE_OPTICAL_TRAPPING
 %   Entry point for the optical trapping / optical matter analysis pipeline.
 %
@@ -67,7 +67,10 @@ fprintf('Roll window : %d frames\n\n', meta.rolling_window_frames);
 % =========================================================================
 %  3. LOAD DATA
 % =========================================================================
-trackRes = load_tracking_data(folder);
+
+trackRes = load_tracking_data(folder, meta.exposure_time_s);
+% Traces are in nm, time is in seconds
+
 
 % =========================================================================
 %  4. GROUP TRACES BY MOVIE
@@ -89,9 +92,9 @@ for m = 1:n_movies
 
     % --- Per-particle metrics (positions, std, speed) --------------------
     particle_metrics = compute_particle_metrics( ...
-        mov.traces, meta.exposure_time_s, meta.rolling_window_frames);
+        mov.traces, meta.rolling_window_frames);
     
-    particle_metrics = compute_angular_metrics(particle_metrics, meta.exposure_time_s, meta.rolling_window_frames);
+    particle_metrics = compute_angular_metrics(particle_metrics, meta.rolling_window_frames);
     
     % --- Pairwise metrics (distance, correlation) -----------------------
     if n_particles > 1
@@ -151,11 +154,21 @@ print_assembly_summary(Results);
 % 11. SAVE
 % =========================================================================
 save_results(Results, folder);
-
 fprintf('\nDone. Results saved to:\n  %s\n', folder);
+
+T = Results.tables.movie_summary;
+
+figure; hold on
+for m = 1:height(T)
+    th = T.MeanThetaUnwrap{m};
+    t  = (0:numel(th)-1) * meta.exposure_time_s;
+    plot(t, th / (2*pi),'DisplayName', sprintf('Mov %d', m))   % full turns
+    
 end
+xlabel('Time (s)');  ylabel('Mean rotation (full turns)');
+legen('show')
 
-
+end
 
 % =========================================================================
 %  LOCAL HELPER:  prompt_user_inputs

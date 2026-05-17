@@ -47,26 +47,30 @@ function tables = build_summary_tables(movie_results, summary)
 
     n_movies = numel(movie_results);
 
-    % =====================================================================
+        % =====================================================================
     %  1.  Movie-level summary table
     % =====================================================================
-    MovieIndex     = zeros(n_movies, 1);
-    nParticles     = zeros(n_movies, 1);
-    Mean_X         = NaN(n_movies, 1);
-    Mean_Y         = NaN(n_movies, 1);
-    Std_X          = NaN(n_movies, 1);
-    Std_Y          = NaN(n_movies, 1);
-    Std_R          = NaN(n_movies, 1);
-    MeanSpeedTotal = NaN(n_movies, 1);
-    MeanOmega      = NaN(n_movies, 1);
-    MeanOmegaAbs   = NaN(n_movies, 1);
-    RotFreq        = NaN(n_movies, 1);
-    RotPeriod      = NaN(n_movies, 1);
-    DomFreq        = NaN(n_movies, 1);
-
+    MovieIndex      = zeros(n_movies, 1);
+    nParticles      = zeros(n_movies, 1);
+    Mean_X          = NaN(n_movies, 1);
+    Mean_Y          = NaN(n_movies, 1);
+    Std_X           = NaN(n_movies, 1);
+    Std_Y           = NaN(n_movies, 1);
+    Std_R           = NaN(n_movies, 1);
+    MeanSpeedTotal  = NaN(n_movies, 1);
+    MeanOmega       = NaN(n_movies, 1);
+    MeanOmegaAbs    = NaN(n_movies, 1);
+    RotFreq         = NaN(n_movies, 1);
+    RotPeriod       = NaN(n_movies, 1);
+    DomFreq         = NaN(n_movies, 1);
+    NetRotation_rad = NaN(n_movies, 1);         % scalar: total angular travel
+    MeanThetaUnwrap = cell(n_movies, 1);        % vector: avg unwrapped theta
+    % Assemble table
+    
     for m = 1:n_movies
         mov = movie_results{m};
         pm  = mov.particle_metrics;
+
         MovieIndex(m)     = mov.movie_idx;
         nParticles(m)     = mov.n_particles;
         Mean_X(m)         = nanmean(cellfun(@(p) p.mean_x,           pm));
@@ -80,15 +84,52 @@ function tables = build_summary_tables(movie_results, summary)
         RotFreq(m)        = nanmean(cellfun(@(p) p.rot_freq_mean,    pm));
         RotPeriod(m)      = nanmean(cellfun(@(p) p.rot_period_s,     pm));
         DomFreq(m)        = nanmean(cellfun(@(p) p.dominant_freq_hz, pm));
+
+        % --- Average unwrapped theta across particles --------------------
+        %
+        % Each particle may have a slightly different trace length after
+        % pairwise trimming, so we align to the shortest common length
+        % before averaging.  This gives a single representative rotation
+        % trajectory for the movie that can be plotted directly.
+        %
+        % NetRotation_rad: total angular travel of the assembly from first
+        % to last frame (signed: positive = net CCW, negative = net CW).
+        % Averaged across particles before storing, so it reflects the
+        % collective drift rather than any single particle's trajectory.
+
+        nP      = numel(pm);
+        lengths = cellfun(@(p) numel(p.theta_unwrap), pm);
+        nF_min  = min(lengths);
+
+        if nF_min >= 2
+            % Stack theta_unwrap traces aligned to common length
+            theta_mat = zeros(nF_min, nP);
+            for p = 1:nP
+                theta_mat(:, p) = pm{p}.theta_unwrap(1:nF_min);
+            end
+            avg_theta = nanmean(theta_mat, 2);   % [nF_min x 1]
+
+            MeanThetaUnwrap{m}  = avg_theta;
+            NetRotation_turns(m) = (avg_theta(end) - avg_theta(1)) / (2*pi);
+        else
+            MeanThetaUnwrap{m}  = NaN;
+            NetRotation_rad(m)  = NaN;
+        end
+        
+       
     end
 
     tables.movie_summary = table( ...
         MovieIndex, nParticles, Mean_X, Mean_Y, ...
         Std_X, Std_Y, Std_R, MeanSpeedTotal, ...
         MeanOmega, MeanOmegaAbs, RotFreq, RotPeriod, DomFreq, ...
+        NetRotation_turns(:), MeanThetaUnwrap,  ...
         'VariableNames', {'MovieIndex','nParticles', ...
         'Mean_X','Mean_Y','Std_X','Std_Y','Std_R','MeanSpeedTotal', ...
-        'MeanOmega','MeanOmegaAbs','RotFreq_Hz','RotPeriod_s','DomFreq_Hz'});
+        'MeanOmega','MeanOmegaAbs','RotFreq_Hz','RotPeriod_s','DomFreq_Hz', ...
+        'NetRotation_rad', 'MeanThetaUnwrap'});
+
+   
 
     % =====================================================================
     %  2.  Per-particle detail table
